@@ -31,50 +31,52 @@ to \code{registerDoRNG} disables doRNG -- which then needs to be registered.
 }
 \examples{
 
-library(doParallel)
-cl <- makeCluster(2)
-registerDoParallel(cl)
+if (requireNamespace("doParallel", quietly = TRUE)) {
+  cl <- parallel::makeCluster(2)
+  doParallel::registerDoParallel(cl)
 
-# One can make reproducible loops using the \%dorng\% operator
-r1 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
-# or convert \%dopar\% loops using registerDoRNG
-registerDoRNG(1234)
-r2 <- foreach(i=1:4) \%dopar\% { runif(1) }
-identical(r1, r2)
-stopCluster(cl)
+  tryCatch({
+    # One can make reproducible loops using the \%dorng\% operator
+    r1 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
 
-# Registering another foreach backend disables doRNG
-cl <- makeCluster(2)
-registerDoParallel(cl)
-set.seed(1234)
-s1 <- foreach(i=1:4) \%dopar\% { runif(1) }
-set.seed(1234)
-s2 <- foreach(i=1:4) \%dopar\% { runif(1) }
-identical(s1, s2)
-\dontshow{ stopifnot(!identical(s1, s2)) }
+    # or convert \%dopar\% loops using registerDoRNG
+    registerDoRNG(1234)
+    r2 <- foreach(i=1:4) \%dopar\% { runif(1) }
+    identical(r1, r2)
 
-# doRNG is re-nabled by re-registering it 
-registerDoRNG()
-set.seed(1234)
-r3 <- foreach(i=1:4) \%dopar\% { runif(1) }
-identical(r2, r3)
-# NB: the results are identical independently of the task scheduling
-# (r2 used 2 nodes, while r3 used 3 nodes)
+    # Registering another foreach backend disables doRNG
+    doParallel::registerDoParallel(cl)
+    set.seed(1234)
+    s1 <- foreach(i=1:4) \%dopar\% { runif(1) }
+    set.seed(1234)
+    s2 <- foreach(i=1:4) \%dopar\% { runif(1) }
+    identical(s1, s2)
+    \dontshow{ stopifnot(!identical(s1, s2)) }
 
-# argument `once=FALSE` reseeds doRNG's seed at the beginning of each loop 
-registerDoRNG(1234, once=FALSE)
-r1 <- foreach(i=1:4) \%dopar\% { runif(1) }
-r2 <- foreach(i=1:4) \%dopar\% { runif(1) }
-identical(r1, r2)
+    # doRNG is re-enabled by re-registering it
+    registerDoRNG()
+    set.seed(1234)
+    r3 <- foreach(i=1:4) \%dopar\% { runif(1) }
+    identical(r2, r3)
 
-# Once doRNG is registered the seed can also be passed as an option to \%dopar\%
-r1.2 <- foreach(i=1:4, .options.RNG=456) \%dopar\% { runif(1) }
-r2.2 <- foreach(i=1:4, .options.RNG=456) \%dopar\% { runif(1) }
-identical(r1.2, r2.2) && !identical(r1.2, r1)
-\dontshow{ stopifnot(identical(r1.2, r2.2) && !identical(r1.2, r1)) }
+    # argument `once=FALSE` reseeds doRNG's seed at the beginning of each loop
+    registerDoRNG(1234, once=FALSE)
+    a1 <- foreach(i=1:4) \%dopar\% { runif(1) }
+    a2 <- foreach(i=1:4) \%dopar\% { runif(1) }
+    identical(a1, a2)
 
-stopCluster(cl)
-
+    # Once doRNG is registered the seed can also be passed as an option to \%dopar\%
+    b1 <- foreach(i=1:4, .options.RNG=456) \%dopar\% { runif(1) }
+    b2 <- foreach(i=1:4, .options.RNG=456) \%dopar\% { runif(1) }
+    identical(b1, b2) && !identical(b1, r1)
+    \dontshow{ stopifnot(identical(b1, b2) && !identical(b1, r1)) }
+  }, finally = {
+    foreach::registerDoSEQ()
+    parallel::stopCluster(cl)
+  })
+} else {
+  message("Package 'doParallel' is not installed; skipping this example.")
+}
 }
 \seealso{
 [%dorng%]

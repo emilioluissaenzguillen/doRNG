@@ -2,6 +2,7 @@ Package: doRNG
 Type: Package
 Title: Generic Reproducible Parallel Backend for 'foreach' Loops
 Version: 1.8.6.3
+Date: 2026-02-05
 Encoding: UTF-8
 Authors@R: c(
     person("Renaud", "Gaujoux",

@@ -20,54 +20,59 @@
 #' @import stats rngtools foreach
 #' @examples
 #' 
-#' # register parallel backend
-#' library(doParallel)
-#' cl <- makeCluster(2)
-#' registerDoParallel(cl)
+#' # Register a parallel backend (suggested package)
+#' local({
+#'   if (requireNamespace("doParallel", quietly = TRUE)) {
+#'     cl <- parallel::makeCluster(2)
+#'     doParallel::registerDoParallel(cl)
+#'     on.exit(parallel::stopCluster(cl), add = TRUE)
 #'
-#' ## standard %dopar% loop are not reproducible
-#' set.seed(123)
-#' r1 <- foreach(i=1:4) %dopar%{ runif(1) }
-#' set.seed(123)
-#' r2 <- foreach(i=1:4) %dopar%{ runif(1) }
-#' identical(r1, r2)
-#' \dontshow{ stopifnot(!identical(r1, r2)) }
-#' 
-#' ## %dorng% loops _are_ reproducible
-#' set.seed(123)
-#' r1 <- foreach(i=1:4) %dorng%{ runif(1) }
-#' set.seed(123)
-#' r2 <- foreach(i=1:4) %dorng%{ runif(1) }
-#' identical(r1, r2)
-#' \dontshow{ stopifnot(identical(r1, r2)) }
-#' 
-#' # alternative way of seeding 
-#' a1 <- foreach(i=1:4, .options.RNG=123) %dorng%{ runif(1) }
-#' a2 <- foreach(i=1:4, .options.RNG=123) %dorng%{ runif(1) }
-#' identical(a1, a2) && identical(a1, r1)
-#' \dontshow{ stopifnot(identical(a1, a2) && identical(a1, r1)) }
-#' 
-#' ## sequences of %dorng% loops _are_ reproducible
-#' set.seed(123)
-#' s1 <- foreach(i=1:4) %dorng%{ runif(1) }
-#' s2 <- foreach(i=1:4) %dorng%{ runif(1) }
-#' identical(s1, r1) && !identical(s1, s2)
-#' \dontshow{ stopifnot(identical(s1, r1) && !identical(s1, s2)) }
+#'     ## standard %dopar% loops are not reproducible
+#'     set.seed(123)
+#'     r1 <- foreach(i = 1:4) %dopar% { runif(1) }
+#'     set.seed(123)
+#'     r2 <- foreach(i = 1:4) %dopar% { runif(1) }
+#'     identical(r1, r2)
+#'     \dontshow{ stopifnot(!identical(r1, r2)) }
 #'
-#' set.seed(123)
-#' s1.2 <- foreach(i=1:4) %dorng%{ runif(1) }
-#' s2.2 <- foreach(i=1:4) %dorng%{ runif(1) }
-#' identical(s1, s1.2) && identical(s2, s2.2)
-#' \dontshow{ stopifnot(identical(s1, s1.2) && identical(s2, s2.2)) }
-#'  
-#' ## Non-invasive way of converting %dopar% loops into reproducible loops
-#' registerDoRNG(123)
-#' s3 <- foreach(i=1:4) %dopar%{ runif(1) }
-#' s4 <- foreach(i=1:4) %dopar%{ runif(1) }
-#' identical(s3, s1) && identical(s4, s2)
-#' \dontshow{ stopifnot(identical(s3, s1) && identical(s4, s2)) }
-#' 
-#' stopCluster(cl) 
+#'     ## %dorng% loops _are_ reproducible
+#'     set.seed(123)
+#'     d1 <- foreach(i = 1:4) %dorng% { runif(1) }
+#'     set.seed(123)
+#'     d2 <- foreach(i = 1:4) %dorng% { runif(1) }
+#'     identical(d1, d2)
+#'     \dontshow{ stopifnot(identical(d1, d2)) }
+#'
+#'     # alternative way of seeding
+#'     a1 <- foreach(i = 1:4, .options.RNG = 123) %dorng% { runif(1) }
+#'     a2 <- foreach(i = 1:4, .options.RNG = 123) %dorng% { runif(1) }
+#'     identical(a1, a2) && identical(a1, d1)
+#'     \dontshow{ stopifnot(identical(a1, a2) && identical(a1, d1)) }
+#'
+#'     ## sequences of %dorng% loops _are_ reproducible
+#'     set.seed(123)
+#'     s1 <- foreach(i = 1:4) %dorng% { runif(1) }
+#'     s2 <- foreach(i = 1:4) %dorng% { runif(1) }
+#'     identical(s1, d1) && !identical(s1, s2)
+#'     \dontshow{ stopifnot(identical(s1, d1) && !identical(s1, s2)) }
+#'
+#'     set.seed(123)
+#'     s1.2 <- foreach(i = 1:4) %dorng% { runif(1) }
+#'     s2.2 <- foreach(i = 1:4) %dorng% { runif(1) }
+#'     identical(s1, s1.2) && identical(s2, s2.2)
+#'     \dontshow{ stopifnot(identical(s1, s1.2) && identical(s2, s2.2)) }
+#'
+#'     ## Non-invasive way of converting %dopar% loops into reproducible loops
+#'     registerDoRNG(123)
+#'     s3 <- foreach(i = 1:4) %dopar% { runif(1) }
+#'     s4 <- foreach(i = 1:4) %dopar% { runif(1) }
+#'     identical(s3, s1) && identical(s4, s2)
+#'     \dontshow{ stopifnot(identical(s3, s1) && identical(s4, s2)) }
+#'
+#'   } else {
+#'     message("Package 'doParallel' is not installed; skipping parallel examples.")
+#'   }
+#' })
 #'
 NULL
 

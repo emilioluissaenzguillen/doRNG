@@ -36,26 +36,27 @@ for which the warning should be skipped.
 
 \examples{
 
-library(doParallel)
-cl <- makeCluster(2)
-registerDoParallel(cl)
+if (requireNamespace("doParallel", quietly = TRUE)) {
+  cl <- parallel::makeCluster(2)
+  doParallel::registerDoParallel(cl)
+  on.exit(parallel::stopCluster(cl), add = TRUE)
 
-# standard \%dopar\% loops are _not_ reproducible
-set.seed(1234)
-s1 <- foreach(i=1:4) \%dopar\% { runif(1) }
-set.seed(1234)
-s2 <- foreach(i=1:4) \%dopar\% { runif(1) }
-identical(s1, s2)
+  # standard \%dopar\% loops are _not_ reproducible
+  set.seed(1234)
+  s1 <- foreach(i=1:4) \%dopar\% { runif(1) }
+  set.seed(1234)
+  s2 <- foreach(i=1:4) \%dopar\% { runif(1) }
+  identical(s1, s2)
 
-# single \%dorng\% loops are reproducible
-r1 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
-r2 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
-identical(r1, r2)
-# the sequence os RNG seed is stored as an attribute
-attr(r1, 'rng')
-
-# stop cluster
-stopCluster(cl)
+  # single \%dorng\% loops are reproducible
+  r1 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
+  r2 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
+  identical(r1, r2)
+  # the sequence of RNG seeds is stored as an attribute
+  attr(r1, "rng")
+} else {
+  message("Package 'doParallel' is not installed; skipping this example.")
+}
 
 # More examples can be found in demo `doRNG`
 \dontrun{
@@ -63,48 +64,41 @@ demo('doRNG')
 }
 
 ## Some features of the \%dorng\% foreach operator 
+if (requireNamespace("doParallel", quietly = TRUE)) {
+  ## Fork backend on Unix
+  if (.Platform$OS.type == "unix") {
+    doParallel::registerDoParallel(2)
 
-library(doRNG)
-library(doParallel)
+    r1 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
+    r2 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
+    identical(r1, r2)
+    attr(r1, "rng")
 
-if( .Platform$OS.type == "unix" ){
-  registerDoParallel(2)
+    set.seed(1234)
+    s1 <- foreach(i=1:4) \%dorng\% { runif(1) }
+    s2 <- foreach(i=1:4) \%dorng\% { runif(1) }
+    identical(s1, s2)
 
-  # single \%dorng\% loops are reproducible
-  r1 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
-  r2 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
-  identical(r1, r2)
-  # the sequence os RNG seed is stored as an attribute
-  attr(r1, 'rng')
-  
-  # sequences of \%dorng\% loops are reproducible
-  set.seed(1234)
-  s1 <- foreach(i=1:4) \%dorng\% { runif(1) }
-  s2 <- foreach(i=1:4) \%dorng\% { runif(1) }
-  # two consecutive (unseed) \%dorng\% loops are not identical
+    set.seed(1234)
+    s1.2 <- foreach(i=1:4) \%dorng\% { runif(1) }
+    s2.2 <- foreach(i=1:4) \%dorng\% { runif(1) }
+    identical(s1, s1.2) && identical(s2, s2.2)
+    identical(r1, s1)
+  }
+
+  ## PSOCK cluster (works everywhere)
+  cl <- parallel::makeCluster(2)
+  doParallel::registerDoParallel(cl)
+  on.exit(parallel::stopCluster(cl), add = TRUE)
+
+  s1 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
+  s2 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
   identical(s1, s2)
 
-  # But the whole sequence of loops is reproducible
-  set.seed(1234)
-  s1.2 <- foreach(i=1:4) \%dorng\% { runif(1) }
-  s2.2 <- foreach(i=1:4) \%dorng\% { runif(1) }
-  identical(s1, s1.2) && identical(s2, s2.2)
-  # it gives the same result as with .options.RNG
-  identical(r1, s1)
-  
+  registerDoSEQ()
+} else {
+  message("Package 'doParallel' is not installed; skipping these examples.")
 }
-
-# Works with SNOW-like and MPI clusters
-# SNOW-like cluster
-cl <- makeCluster(2)
-registerDoParallel(cl)
-
-s1 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
-s2 <- foreach(i=1:4, .options.RNG=1234) \%dorng\% { runif(1) }
-identical(s1, s2)
-
-stopCluster(cl)
-registerDoSEQ()
 
 \dontrun{
 # MPI cluster (requires a working MPI + Rmpi setup)
@@ -123,6 +117,6 @@ registerDoSEQ()
 
 }
 \seealso{
-\code{\link[foreach]{foreach}}, \code{\link[doParallel]{doParallel}}
-, \code{\link[doParallel]{registerDoParallel}}, \code{\link[doMPI]{doMPI}}
+\code{\link[foreach]{foreach}}, \code{\link[doParallel]{doParallel}},
+\code{\link[doParallel]{registerDoParallel}}, \code{\link[doMPI]{doMPI}}
 }
